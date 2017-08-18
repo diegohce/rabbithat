@@ -262,7 +262,9 @@ func CollectFromFile(filename string) (*RabbitMQ, error) {
 
 	r := &RabbitMQ{}
 
-	json.NewDecoder(f).Decode(r)
+	if err := json.NewDecoder(f).Decode(r); err != nil {
+		return nil, err
+	}
 
 	return r, nil
 }
