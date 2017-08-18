@@ -1,5 +1,5 @@
 # Rabbit Hat
-RabbitMQ virtual host clonning tool.
+RabbitMQ virtual host cloning tool.
 
 ## Usage 
 
