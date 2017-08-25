@@ -1,13 +1,13 @@
 package rabbit
 
 import (
-    "fmt"
+	"fmt"
 	"io"
 	"os"
 	"strings"
 	"bytes"
-    "net/http"
-    "encoding/json"
+	"net/http"
+	"encoding/json"
 )
 
 const (
@@ -249,6 +249,8 @@ func (r *RabbitMQ) DumpTo(filename string) error {
 
 	json.NewEncoder(f).Encode(r)
 
+	f.Close()
+
 	return nil
 }
 
@@ -265,6 +267,8 @@ func CollectFromFile(filename string) (*RabbitMQ, error) {
 	if err := json.NewDecoder(f).Decode(r); err != nil {
 		return nil, err
 	}
+
+	f.Close()
 
 	return r, nil
 }
