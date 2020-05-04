@@ -1,34 +1,33 @@
 package rabbit
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"strings"
-	"bytes"
-	"net/http"
-	"encoding/json"
 )
 
 const (
-	DEFAULT_VHOST = "%2F"
-	GET_QUEUES_URL = "/api/queues/%s" // vhost
-	GET_EXCHANGES_URL = "/api/exchanges/%s"  // vhost
-	GET_BINDINGS_URL = "/api/bindings/%s"  // vhost
+	DEFAULT_VHOST     = "%2F"
+	GET_QUEUES_URL    = "/api/queues/%s"    // vhost
+	GET_EXCHANGES_URL = "/api/exchanges/%s" // vhost
+	GET_BINDINGS_URL  = "/api/bindings/%s"  // vhost
 
 	POST_BINDING_URL = "/api/bindings/%s/e/%s/q/%s" // vhost, exchange, queue
 
-	PUT_QUEUE_URL = "/api/queues/%s/%s" // vhost, queue
+	PUT_QUEUE_URL    = "/api/queues/%s/%s"    // vhost, queue
 	PUT_EXCHANGE_URL = "/api/exchanges/%s/%s" // vhost, queue
 )
 
-
 type Queue struct {
-	Name       string `json:"name"`
-	VHost      string `json:"vhost"`
-	Durable    bool   `json:"durable"`
-	AutoDelete bool   `json:"auto_delete"`
-
+	Name       string                 `json:"name"`
+	VHost      string                 `json:"vhost"`
+	Durable    bool                   `json:"durable"`
+	AutoDelete bool                   `json:"auto_delete"`
+	Arguments  map[string]interface{} `json:"arguments"`
 }
 
 type Exchange struct {
@@ -48,7 +47,6 @@ type Binding struct {
 	PropertiesKey string `json:"properties_key"`
 }
 
-
 type RabbitMQ struct {
 	BaseUrl   string
 	User      string
@@ -59,21 +57,20 @@ type RabbitMQ struct {
 	Bindings  []Binding
 }
 
-
 func (r *RabbitMQ) doCall(method, url string, payload io.Reader) (io.ReadCloser, error) {
 
 	fmt.Println(method, "->", url)
 
-    client := &http.Client{}
-    req, err := http.NewRequest(method, url, payload)
+	client := &http.Client{}
+	req, err := http.NewRequest(method, url, payload)
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-    req.SetBasicAuth(r.User, r.Password)
+	req.SetBasicAuth(r.User, r.Password)
 
-    resp, err := client.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -81,12 +78,10 @@ func (r *RabbitMQ) doCall(method, url string, payload io.Reader) (io.ReadCloser,
 	return resp.Body, nil
 }
 
-
 func (r *RabbitMQ) doGet(url string) (io.ReadCloser, error) {
 
 	return r.doCall("GET", url, nil)
 }
-
 
 func (r *RabbitMQ) doPost(url string, body []byte) (io.ReadCloser, error) {
 
@@ -104,44 +99,38 @@ func (r *RabbitMQ) doPut(url string, body []byte) (io.ReadCloser, error) {
 
 func (r *RabbitMQ) readQueues() error {
 
-    url := fmt.Sprintf(r.BaseUrl + GET_QUEUES_URL, r.VHost)
+	url := fmt.Sprintf(r.BaseUrl+GET_QUEUES_URL, r.VHost)
 
 	body, err := r.doGet(url)
 	if err != nil {
 		return err
 	}
 
-    json.NewDecoder(body).Decode(&r.Queues)
-
-	return nil
+	return json.NewDecoder(body).Decode(&r.Queues)
 }
 
 func (r *RabbitMQ) readExchanges() error {
 
-    url := fmt.Sprintf(r.BaseUrl + GET_EXCHANGES_URL, r.VHost)
+	url := fmt.Sprintf(r.BaseUrl+GET_EXCHANGES_URL, r.VHost)
 
 	body, err := r.doGet(url)
 	if err != nil {
 		return err
 	}
 
-    json.NewDecoder(body).Decode(&r.Exchanges)
-
-	return nil
+	return json.NewDecoder(body).Decode(&r.Exchanges)
 }
 
 func (r *RabbitMQ) readBindings() error {
 
-    url := fmt.Sprintf(r.BaseUrl + GET_BINDINGS_URL, r.VHost)
+	url := fmt.Sprintf(r.BaseUrl+GET_BINDINGS_URL, r.VHost)
 
 	body, err := r.doGet(url)
 	if err != nil {
 		return err
 	}
 
-    json.NewDecoder(body).Decode(&r.Bindings)
-
-	return nil
+	return json.NewDecoder(body).Decode(&r.Bindings)
 }
 
 func (r *RabbitMQ) Collect() error {
@@ -161,8 +150,6 @@ func (r *RabbitMQ) Collect() error {
 	return nil
 }
 
-
-
 func (r *RabbitMQ) CloneTo(hostport, user, password, vhost string) error {
 
 	if vhost == "/" {
@@ -172,7 +159,7 @@ func (r *RabbitMQ) CloneTo(hostport, user, password, vhost string) error {
 	baseurl := "http://" + hostport
 
 	for _, queue := range r.Queues {
-		url := fmt.Sprintf(baseurl + PUT_QUEUE_URL, vhost, queue.Name)
+		url := fmt.Sprintf(baseurl+PUT_QUEUE_URL, vhost, queue.Name)
 
 		queue.VHost = vhost
 
@@ -194,7 +181,7 @@ func (r *RabbitMQ) CloneTo(hostport, user, password, vhost string) error {
 			continue
 		}
 
-		url := fmt.Sprintf(baseurl + PUT_EXCHANGE_URL, vhost, exchange.Name)
+		url := fmt.Sprintf(baseurl+PUT_EXCHANGE_URL, vhost, exchange.Name)
 
 		exchange.VHost = vhost
 
@@ -217,7 +204,7 @@ func (r *RabbitMQ) CloneTo(hostport, user, password, vhost string) error {
 		}
 
 		if binding.DestType == "queue" {
-			url := fmt.Sprintf(baseurl + POST_BINDING_URL, vhost, binding.Source, binding.Destination)
+			url := fmt.Sprintf(baseurl+POST_BINDING_URL, vhost, binding.Source, binding.Destination)
 
 			binding.VHost = vhost
 
@@ -239,7 +226,6 @@ func (r *RabbitMQ) CloneTo(hostport, user, password, vhost string) error {
 	return nil
 }
 
-
 func (r *RabbitMQ) DumpTo(filename string) error {
 
 	f, err := os.Create(filename)
@@ -253,7 +239,6 @@ func (r *RabbitMQ) DumpTo(filename string) error {
 
 	return nil
 }
-
 
 func CollectFromFile(filename string) (*RabbitMQ, error) {
 
@@ -272,6 +257,3 @@ func CollectFromFile(filename string) (*RabbitMQ, error) {
 
 	return r, nil
 }
-
-
-
