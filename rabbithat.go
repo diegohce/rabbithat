@@ -1,18 +1,16 @@
 package main
 
 import (
-	"os"
-	"fmt"
 	"flag"
+	"fmt"
+	"os"
 	"rabbithat/rabbit"
 )
 
-
 const (
-	VERSION = "0.1.0"
-	VERSION_NAME = "Varus"
+	VERSION      = "0.1.1"
+	VERSION_NAME = "Cornell"
 )
-
 
 type CmdOptions struct {
 	SourceRabbit   string
@@ -28,7 +26,6 @@ type CmdOptions struct {
 	Version        bool
 }
 
-
 func options() (*CmdOptions, error) {
 
 	args := os.Args[1:]
@@ -37,15 +34,15 @@ func options() (*CmdOptions, error) {
 
 	fs := flag.NewFlagSet("rabbithat", flag.ExitOnError)
 
-	fs.StringVar(&co.SourceRabbit  , "source-rabbit"  , "", "Source rabbit address:port")
-	fs.StringVar(&co.SourceUser    , "source-user"    , "", "Source rabbit username")
+	fs.StringVar(&co.SourceRabbit, "source-rabbit", "", "Source rabbit address:port")
+	fs.StringVar(&co.SourceUser, "source-user", "", "Source rabbit username")
 	fs.StringVar(&co.SourcePassword, "source-password", "", "Source rabbit password")
-	fs.StringVar(&co.SourceVHost   , "source-vhost"   , "", "Source rabbit virtual host")
+	fs.StringVar(&co.SourceVHost, "source-vhost", "", "Source rabbit virtual host")
 
-	fs.StringVar(&co.TargetRabbit  , "target-rabbit"  , "", "Target rabbit address:port")
-	fs.StringVar(&co.TargetUser    , "target-user"    , "", "Target rabbit username")
+	fs.StringVar(&co.TargetRabbit, "target-rabbit", "", "Target rabbit address:port")
+	fs.StringVar(&co.TargetUser, "target-user", "", "Target rabbit username")
 	fs.StringVar(&co.TargetPassword, "target-password", "", "Target rabbit password")
-	fs.StringVar(&co.TargetVHost   , "target-vhost"   , "", "Target rabbit virtual host")
+	fs.StringVar(&co.TargetVHost, "target-vhost", "", "Target rabbit virtual host")
 
 	fs.StringVar(&co.TargetFile, "target-file", "", "File to dump source rabbit data (json format)")
 	fs.StringVar(&co.SourceFile, "source-file", "", "File to read source rabbit data (json format)")
@@ -65,12 +62,9 @@ func options() (*CmdOptions, error) {
 
 }
 
-
-
 func main() {
 
 	var r *rabbit.RabbitMQ
-
 
 	op, err := options()
 	if err != nil {
@@ -101,7 +95,6 @@ func main() {
 		os.Exit(1)
 	}
 
-
 	if op.SourceFile != "" {
 		var err error
 
@@ -119,10 +112,10 @@ func main() {
 		fmt.Println("Collecting from", op.SourceRabbit)
 
 		r = &rabbit.RabbitMQ{
-			BaseUrl : "http://" + op.SourceRabbit,
-			User    : op.SourceUser,
+			BaseUrl:  "http://" + op.SourceRabbit,
+			User:     op.SourceUser,
 			Password: op.SourcePassword,
-			VHost   : op.SourceVHost,
+			VHost:    op.SourceVHost,
 		}
 
 		if err := r.Collect(); err != nil {
@@ -130,7 +123,6 @@ func main() {
 			os.Exit(1)
 		}
 	}
-
 
 	if op.TargetRabbit != "" {
 
@@ -143,7 +135,6 @@ func main() {
 
 		os.Exit(0)
 	}
-
 
 	if op.TargetFile != "" {
 
@@ -165,5 +156,3 @@ rmq to dump file
 dump file to rmq
 
 */
-
-
